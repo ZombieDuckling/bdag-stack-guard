@@ -2,3 +2,6 @@ guard.env
 guard.log
 guard.status
 .guard_state
+barrage.status
+barrage-events.log
+barrage-offenders.tsv
