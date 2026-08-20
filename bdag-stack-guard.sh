@@ -51,9 +51,16 @@ acstate(){ grep -oE '"state"[[:space:]]*:[[:space:]]*"[a-z_]+"' "$AUTOMATION_JSO
 mkdir -p "$DIR"; touch "$STATE"; . "$STATE" 2>/dev/null
 
 # ---- HEALTH ------------------------------------------------------------------
-LHEAD=$(hexdec "$(rpc eth_blockNumber '[]' "$EVM_RPC" | grep -oE '0x[0-9a-f]+')")
+# Retry the liveness probe: a real outage fails every attempt; a transient
+# (a single slow/busy RPC response) clears on retry and must not page.
+LHEAD=""
+for _try in 1 2 3; do
+  LHEAD=$(hexdec "$(rpc eth_blockNumber '[]' "$EVM_RPC" | grep -oE '0x[0-9a-f]+')")
+  [ -n "$LHEAD" ] && break
+  sleep 2
+done
 if [ -z "$LHEAD" ]; then
-  alert "NODE-RPC-DOWN: no eth_blockNumber from $EVM_RPC (node EVM engine not serving)"
+  alert "NODE-RPC-DOWN: no eth_blockNumber from $EVM_RPC after 3 tries (node EVM engine not serving)"
 else
   PEERS=$(hexdec "$(rpc net_peerCount '[]' "$EVM_RPC" | grep -oE '0x[0-9a-f]+')")
   [ -n "$PEERS" ] && [ "$PEERS" -lt "$MIN_PEERS" ] && alert "PEER-STARVATION: $PEERS peers (< $MIN_PEERS)"
