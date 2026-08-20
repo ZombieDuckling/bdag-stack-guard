@@ -1,0 +1,4 @@
+guard.env
+guard.log
+guard.status
+.guard_state
