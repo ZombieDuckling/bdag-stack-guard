@@ -83,6 +83,20 @@ cp guard.env.example guard.env      # edit STACK_DIR, CANONICAL_RPC, SSH_ALLOWLI
 Output goes to `guard.log` (history) and `guard.status` (latest OK/ALERT).
 Exit code is `0` on OK, `1` on any alert — wire that into your pager if you like.
 
+## Verification
+
+This repo includes stubbed smoke tests so changes can be checked without a live
+mining stack or Docker daemon:
+
+```sh
+bash -n bdag-stack-guard.sh tests/smoke.sh tests/stubs/*
+tests/smoke.sh
+```
+
+The smoke suite puts fake `curl`, `docker`, `ss`, and `sha256sum` binaries first
+on `PATH`, then exercises healthy, RPC-down/retry, pool-down, production-stall,
+automation-hold, chain-drift, and auto-heal guard-rail scenarios.
+
 ## Configuration
 
 All settings are environment variables (see `guard.env.example`). The two that
