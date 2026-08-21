@@ -16,7 +16,7 @@ fail() {
 assert_contains() {
   local file="$1" expected="$2"
   grep -Fq "$expected" "$file" || {
-    printf '--- %s ---\n' "$file" >&2
+    printf '%s\n' "--- $file ---" >&2
     cat "$file" >&2 || true
     fail "expected to find: $expected"
   }
@@ -108,5 +108,10 @@ assert_contains "$CASE_DIR/guard.status" "CHAIN-DRIFT"
 run_case auto-heal-does-not-run-when-node-unhealthy 1 AUTO_HEAL=1 STUB_RPC_DOWN=1 STUB_POOL_DOWN=1 STUB_STOPPED_POOL=pool-main
 assert_contains "$CASE_DIR/guard.status" "NODE-RPC-DOWN"
 [[ ! -s "$CASE_START_LOG" ]] || fail "docker start was called even though node was unhealthy"
+
+run_case auto-heal-restarts-pool-when-node-healthy 1 AUTO_HEAL=1 STUB_POOL_DOWN=1 STUB_STOPPED_POOL=pool-main
+assert_contains "$CASE_DIR/guard.status" "POOL-DOWN"
+assert_contains "$CASE_START_LOG" "pool-main"
+assert_contains "$CASE_DIR/guard.log" "HEAL: restarted pool 'pool-main'"
 
 printf 'smoke: %d scenarios passed\n' "$PASS"
