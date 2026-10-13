@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+method=""
+url=""
+prev=""
+for arg in "$@"; do
+  if [[ "$prev" == "--data" ]]; then
+    method="$(printf '%s' "$arg" | sed -n 's/.*"method":"\([^"]*\)".*/\1/p')"
+  fi
+  prev="$arg"
+  if [[ "$arg" == http://* || "$arg" == https://* ]]; then
+    url="$arg"
+  fi
+done
+
+# Optional counter used to prove bdag-stack-guard retries RPC liveness failures.
+if [[ -n "${STUB_CURL_COUNT_FILE:-}" ]]; then
+  count=0
+  [[ -f "$STUB_CURL_COUNT_FILE" ]] && count="$(cat "$STUB_CURL_COUNT_FILE")"
+  printf '%s\n' "$((count + 1))" > "$STUB_CURL_COUNT_FILE"
+fi
+
+if [[ "${STUB_RPC_DOWN:-0}" == "1" ]]; then
+  exit 0
+fi
+
+is_canonical=0
+if [[ -n "${CANONICAL_RPC:-}" && "$url" == "$CANONICAL_RPC" ]]; then
+  is_canonical=1
+fi
+
+case "$method" in
+  eth_blockNumber)
+    if [[ "$is_canonical" == "1" ]]; then
+      printf '{"jsonrpc":"2.0","id":1,"result":"%s"}\n' "${STUB_CANONICAL_BLOCK:-${STUB_BLOCK:-0x100}}"
+    else
+      printf '{"jsonrpc":"2.0","id":1,"result":"%s"}\n' "${STUB_BLOCK:-0x100}"
+    fi
+    ;;
+  net_peerCount)
+    printf '{"jsonrpc":"2.0","id":1,"result":"%s"}\n' "${STUB_PEERS:-0x5}"
+    ;;
+  eth_getBlockByNumber)
+    if [[ "$is_canonical" == "1" ]]; then
+      printf '{"jsonrpc":"2.0","id":1,"hash":"%s"}\n' "${STUB_CANONICAL_HASH:-0xaaaaaaaa}"
+    else
+      printf '{"jsonrpc":"2.0","id":1,"hash":"%s"}\n' "${STUB_LOCAL_HASH:-0xaaaaaaaa}"
+    fi
+    ;;
+  *)
+    printf '{}\n'
+    ;;
+esac

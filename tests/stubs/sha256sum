@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Minimal cross-platform test stub for Linux sha256sum.
+if [[ -f "${1:-}" ]]; then
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1 "  " $2}'
+  else
+    printf 'stubhash  %s\n' "$1"
+  fi
+fi

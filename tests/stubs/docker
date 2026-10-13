@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  ps)
+    all=0
+    for arg in "$@"; do
+      [[ "$arg" == "-a" ]] && all=1
+    done
+    if [[ "$all" == "1" ]]; then
+      [[ -n "${STUB_STOPPED_POOL:-}" ]] && printf '%s\n' "$STUB_STOPPED_POOL"
+    elif [[ "${STUB_POOL_DOWN:-0}" != "1" ]]; then
+      printf '%s\n' "${STUB_POOL_NAME:-pool-main}"
+    fi
+    ;;
+  logs)
+    # Accept optional flags such as --since before the container name.
+    container="${@: -1}"
+    if [[ "$container" == "${NODE_CONTAINER:-node}" ]]; then
+      [[ "${STUB_NODE_LATCH:-0}" == "1" ]] && printf 'Recovery-required owner status: clean-resync latch\n'
+    else
+      count="${STUB_POOL_SUBMITS:-1}"
+      for ((i=0; i<count; i++)); do
+        printf 'block submitted successfully\n'
+      done
+    fi
+    ;;
+  inspect)
+    printf '%s\n' "${STUB_NODE_IMAGE:-blockdag-node:stable}"
+    ;;
+  start)
+    if [[ -n "${STUB_DOCKER_START_LOG:-}" ]]; then
+      printf '%s\n' "${1:-}" >> "$STUB_DOCKER_START_LOG"
+    fi
+    ;;
+  *)
+    printf 'unexpected docker command: %s\n' "$cmd" >&2
+    exit 2
+    ;;
+esac

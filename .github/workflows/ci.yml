@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  smoke:
+    name: shell parse and smoke tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Parse shell scripts
+        run: |
+          bash -n bdag-stack-guard.sh
+          bash -n tests/smoke.sh
+          for stub in tests/stubs/*; do bash -n "$stub"; done
+
+      - name: Run stubbed smoke scenarios
+        run: tests/smoke.sh

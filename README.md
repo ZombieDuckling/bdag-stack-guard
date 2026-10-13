@@ -100,6 +100,20 @@ cp guard.env.example guard.env      # edit STACK_DIR, CANONICAL_RPC, SSH_ALLOWLI
 `barrage-events.log` / `barrage-offenders.tsv` / `barrage.status`. Both exit `1` on a
 detection so you can wire them to a pager.
 
+## Verification
+
+This repo includes stubbed smoke tests so changes can be checked without a live
+mining stack or Docker daemon:
+
+```sh
+bash -n bdag-stack-guard.sh tests/smoke.sh tests/stubs/*
+tests/smoke.sh
+```
+
+The smoke suite puts fake `curl`, `docker`, `ss`, and `sha256sum` binaries first
+on `PATH`, then exercises healthy, RPC-down/retry, pool-down, production-stall,
+automation-hold, chain-drift, and auto-heal guard-rail scenarios.
+
 ## Design rules
 
 - **The node is never restarted or reverted.** DAG overload / sync lag / fail-close are
